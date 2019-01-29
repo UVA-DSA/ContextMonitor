@@ -23,6 +23,7 @@ class trajSegments:
         self.task = task
         self.taskName = task.replace(".csv","")
         self.picklePath = "{}{}{}".format(os.path.abspath(os.path.dirname(sys.argv[0])), "/pickles/",self.taskName)
+
         self.summary_traj = []
         self.seg_count = 0
         self.left_raw = []
@@ -135,7 +136,11 @@ class trajSegments:
     def getAnnotation(self, df):
         rawAnnotations = np.array(df[["field.seg_label"]])
         processedAnnotations = []
-        
+<<<<<<< HEAD
+
+=======
+
+>>>>>>> d9a67286bbe973792982e427c8b16b8c74220ca8
 
         prev = 0
         for i in range(rawAnnotations.shape[0]-1):
@@ -308,7 +313,12 @@ class trajSegments:
         """
         Read data from csv, feeds them to the GMM and plots the segmented trajectory
         """
+<<<<<<< HEAD
+
+        if self.mode == "detect" and not os.path.isfile("{}{}".format(self.csvPath, self.task)) or os.path.isfile('{}/transition_points2.p'.format(self.picklePath)):
+=======
         if self.mode == "detect" and not os.path.isfile("{}{}".format(self.csvPath, self.task)):
+>>>>>>> d9a67286bbe973792982e427c8b16b8c74220ca8
             return
 
         picklePath = "{}{}".format(os.path.abspath(os.path.dirname(sys.argv[0])), "/pickles")
@@ -328,7 +338,11 @@ class trajSegments:
             refTranstionPath = self.picklePath.replace(self.task.replace(".csv",""), "")
             refSegments = externals.joblib.load("{}referenceTransitions.p".format(refTranstionPath, ))
             transcripts = self.omitSegments(refSegments, transcripts)
-            
+<<<<<<< HEAD
+
+=======
+
+>>>>>>> d9a67286bbe973792982e427c8b16b8c74220ca8
         if self.mode == "evaluate" or self.mode == "detect":
             self.evaluateSegments(annotations, transcripts)
 
@@ -354,7 +368,11 @@ class trajSegments:
             #i=i
         ax2 = ax1.twinx()
         #savefig(figName, dpi = 600, aspect = 'auto')
-    
+<<<<<<< HEAD
+
+=======
+
+>>>>>>> d9a67286bbe973792982e427c8b16b8c74220ca8
         figName = figName.replace(".csv","grasp.csv")
         y_label = "grasper angle"
         x_label = "steps in trajectory"
@@ -402,10 +420,18 @@ class trajSegments:
             processedSegments.append(_minSegment)
             j = j+1
         processedSegments = np.array(processedSegments)
+<<<<<<< HEAD
+        #print "before sorting {}".format(processedSegments)
+=======
+>>>>>>> d9a67286bbe973792982e427c8b16b8c74220ca8
         processedSegments = processedSegments[processedSegments[:,0].argsort()]
         for i in range(len(processedSegments)-1):
             if processedSegments[i][1] != processedSegments[i+1][0]:
                 processedSegments[i][1] = processedSegments[i+1][0]
+<<<<<<< HEAD
+        #print "after sorting {}".format(processedSegments)
+=======
+>>>>>>> d9a67286bbe973792982e427c8b16b8c74220ca8
         """
         #print np.array(processedSegments)
         time = externals.joblib.load("{}/kinTime.p".format(self.picklePath))
@@ -429,6 +455,10 @@ class trajSegments:
         """
         Jaccard similarity
         """
+<<<<<<< HEAD
+        segmentationPath = self.csvPath.replace("csvs", "segmentation")
+=======
+>>>>>>> d9a67286bbe973792982e427c8b16b8c74220ca8
         overlap = 0.0
         jaccard_simmilarity = 0
         j = 0
@@ -436,11 +466,36 @@ class trajSegments:
         loopCount = len(annotations)
         if len(segments)<=len(annotations):
             loopCount = len(segments)
+<<<<<<< HEAD
+        #print np.array(segments)
+=======
         print np.array(segments)
+>>>>>>> d9a67286bbe973792982e427c8b16b8c74220ca8
         for i in range(0, loopCount):
             _min = np.infty
             _minSegment = []
             for k in range(j, len(segments)):
+<<<<<<< HEAD
+                if abs(annotations[i][0] - segments[k][0] + annotations[i][1] - segments[k][1]) <_min:
+                    _min = abs(annotations[i][0] - segments[k][0] + annotations[i][1] - segments[k][1])
+                    _minSegment = segments[k]
+                    j = k+1
+            if _minSegment != []:
+                print "{} {}".format(annotations[i], _minSegment)
+                overlap = self.calculateOverlaps(annotations[i], _minSegment)
+                jaccard_simmilarity += overlap
+
+                delta_t.append(annotations[i][1]-_minSegment[1])
+
+        jaccard_simmilarity = jaccard_simmilarity/len(annotations)
+        segmentation_summary = [jaccard_simmilarity, delta_t[0],delta_t[1], delta_t[2], delta_t[3], delta_t[4], delta_t[5]]
+        segmentation_summary = np.array(segmentation_summary).reshape(1,-1)
+        print segmentation_summary.shape
+        print "jaccard_simmilarity: {}".format(jaccard_simmilarity)
+        writeFile = '{}/{}Segmentation_Accuracy.csv'.format(segmentationPath, self.task)
+        cp = pd.DataFrame(data = np.array(segmentation_summary), columns = ['Jaccard','delta_t1', 'delta_t2', 'delta_t3', 'delta_t4', 'delta_t5', 'delta_t6'])
+        cp.to_csv(writeFile, sep = ',')
+=======
                 if abs(annotations[i][0] - segments[k][0]) <_min:
                     _min = abs(annotations[i][0] - segments[k][0])
                     _minSegment = segments[k]
@@ -452,6 +507,7 @@ class trajSegments:
 
         jaccard_simmilarity = jaccard_simmilarity/len(annotations)
         print "jaccard_simmilarity: {}".format(jaccard_simmilarity)
+>>>>>>> d9a67286bbe973792982e427c8b16b8c74220ca8
         print delta_t
 
     def calculateOverlaps(self, annotations, segments):
