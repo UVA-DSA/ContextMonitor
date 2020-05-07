@@ -1,11 +1,10 @@
-# ContextMonitor
-This is the pipeline for Context Aware Monitoring for Surgical Tasks with the task segmentation based on the implementation of TSC (https://github.com/BerkeleyAutomation/tsc-dl). 
+This repository contains a real-time context-aware monitoring system for Robot-Assisted Surgery. The system aims to improve safety in tele-operated surgery by inferring the operational context from the time-series kinematics data of the robot and then detecting unsafe events using a library of erroneous gesture classifier (dsn2020) or applying checking for constraint violation (ismr2020).
 
-Dependencies: scikit learn, open-cv
-              "pip install numpy scipy scikit-learn"
-              "pip install opencv-contrib-python"
+Publications:
+"Context-aware Monitoring in Robotic Surgery"
+Mohammad Samin Yasar, David Evans, Homa Alemzadeh
+In 2019 International Symposium on Medical Robotics (ISMR)
 
-
-Running the files:
-   T0 run the scripts, first unzip the csvs files:  "cd csvs", tar -zxvf "latest_run_160.csv.tar.gz"
-
+"Real-Time Context-aware Detection of Unsafe Events in Robot-Assisted Surgery"
+Mohammad Samin Yasar, Homa Alemzadeh
+To be published in Proceedings of the 50th IEEE/IFIP International Conference on Dependable Systems and Networks (DSN 2020)
