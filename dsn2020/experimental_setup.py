@@ -88,11 +88,11 @@ class experimentalSetup:
 			super_outlength = 0
 			for name in sorted(glob.glob(glob_path)):
 				#print (name.split("/")[-1])
-				self.readIteration(name, trial, setup)
+				self.readIteration(name, trial, setup, feature_selection = "specific")
 
 
 
-	def readIteration(self, itr_path, trial, setup, train=1):
+	def readIteration(self, itr_path, trial, setup, train=1, feature_selection=None):
 		"""
 		This function will get the iteration folder and read the train and
 		test files along with the gesture for each experiment
@@ -109,52 +109,67 @@ class experimentalSetup:
 			data.append(self.readtrainTest(name))
 			itr_num += 1
 		data = np.asarray(data)
+		if feature_selection == "specific":
+			data, kinvars = self.getSpecificFeatures(data)
+		else:
+			kinvars = "All"
+
 		#data = self.getSpecificFeatures(data)
-		#print ("data shape {}".format(data.shape))
+		print ("data shape {}".format(data.shape))
 		if train == 1:
 			model_class = interpretModel(self.data_path, self.task)
-			model_class, lstm_classifier = self.trainModel(data, itr_num, model_class, lstm_classifier, trial, user_out, setup)
-		return data
+			model_class, lstm_classifier = self.trainModel(data, itr_num, model_class, lstm_classifier, trial, user_out, setup, kinvars)
+		return data, kinvars
 
 	def getSpecificFeatures(self, data):
 		"""
 		Gets only certain features from the data vector, say only cartesian, linear velocity, etc.
 		"""
 		kinOffset, kinSpan = self.loadOffsets()
+		kin_var1 = 'cartesian'; kin_var2 = 'rotation'; kin_var3 = 'grasperAngle'#feature_shape = 14
+		kin_vars = "{}_{}_{}".format(kin_var1, kin_var2, kin_var3)
+		feature_shape = 2*(kinSpan[kin_var1] + kinSpan[kin_var2] + kinSpan[kin_var3])#14
+		temp_offset = int(feature_shape/2)
 		for i in range(data.shape[0]):
 			x_train, y_train, x_test, y_test = data[i]
 			offset = int(x_train.shape[-1]/2)
 
-			temp_xtrain = np.zeros((x_train.shape[0], x_train.shape[1], 14))
-			temp_xtest = np.zeros((x_test.shape[0], x_test.shape[1], 14))
+			temp_xtrain = np.zeros((x_train.shape[0], x_train.shape[1], feature_shape))
+			temp_xtest = np.zeros((x_test.shape[0], x_test.shape[1], feature_shape))
+			print ("x train shape {}".format(temp_xtrain.shape))
 			temp_offset = int(temp_xtrain.shape[-1]/2)
 			cartesian_offset = 0
-			linearVelocity_offset = kinSpan['cartesian'] + cartesian_offset
-			grasperAngle_offset = kinSpan['linearVelocity'] + linearVelocity_offset
+			#linearVelocity_offset = kinSpan['cartesian'] + cartesian_offset
+			angularVelocity_offset = kinSpan[kin_var1] + cartesian_offset
+			#grasperAngle_offset = kinSpan['linearVelocity'] + linearVelocity_offset
+			grasperAngle_offset = kinSpan[kin_var2] + angularVelocity_offset
 
 
-			temp_xtrain[:,:,cartesian_offset:cartesian_offset+kinSpan['cartesian']] = x_train[:,:,kinOffset['cartesian']:kinOffset['cartesian']+kinSpan['cartesian']]
-			temp_xtrain[:,:,temp_offset+cartesian_offset+kinOffset['cartesian']:(temp_offset+cartesian_offset+kinSpan['cartesian'])] = x_train[:,:,offset+kinOffset['cartesian']:(offset+kinOffset['cartesian']+kinSpan['cartesian'])]
+			temp_xtrain[:,:,cartesian_offset:cartesian_offset+kinSpan[kin_var1]] = x_train[:,:,kinOffset[kin_var1]:kinOffset[kin_var1]+kinSpan[kin_var1]]
+			temp_xtrain[:,:,temp_offset+cartesian_offset+kinOffset[kin_var1]:(temp_offset+cartesian_offset+kinSpan[kin_var1])] = x_train[:,:,offset+kinOffset[kin_var1]:(offset+kinOffset[kin_var1]+kinSpan[kin_var1])]
 
-			temp_xtrain[:,:,linearVelocity_offset:linearVelocity_offset+kinSpan['linearVelocity']] = x_train[:,:,kinOffset['linearVelocity']:kinOffset['linearVelocity']+kinSpan['linearVelocity']]
-			temp_xtrain[:,:,(temp_offset+linearVelocity_offset):(temp_offset+linearVelocity_offset+kinSpan['linearVelocity'])] = x_train[:,:,(offset+kinOffset['linearVelocity']):(offset+kinOffset['linearVelocity']+kinSpan['linearVelocity'])]
+			temp_xtrain[:,:,angularVelocity_offset:angularVelocity_offset+kinSpan[kin_var2]] = x_train[:,:,kinOffset[kin_var2]:kinOffset[kin_var2]+kinSpan[kin_var2]]
+			temp_xtrain[:,:,(temp_offset+angularVelocity_offset):(temp_offset+angularVelocity_offset+kinSpan[kin_var2])] = x_train[:,:,(offset+kinOffset[kin_var2]):(offset+kinOffset[kin_var2]+kinSpan[kin_var2])]
 
-			temp_xtrain[:,:,grasperAngle_offset:grasperAngle_offset+kinSpan['grasperAngle']] = x_train[:,:,kinOffset['grasperAngle']:kinOffset['grasperAngle']+kinSpan['grasperAngle']]
-			temp_xtrain[:,:,(temp_offset+grasperAngle_offset):(temp_offset+grasperAngle_offset+kinSpan['grasperAngle'])] = x_train[:,:,offset+kinOffset['grasperAngle']:(offset+kinOffset['grasperAngle']+kinSpan['grasperAngle'])]
+			temp_xtrain[:,:,grasperAngle_offset:grasperAngle_offset+kinSpan[kin_var3]] = x_train[:,:,kinOffset[kin_var3]:kinOffset[kin_var3]+kinSpan[kin_var3]]
+			temp_xtrain[:,:,(temp_offset+grasperAngle_offset):(temp_offset+grasperAngle_offset+kinSpan[kin_var3])] = x_train[:,:,offset+kinOffset[kin_var3]:(offset+kinOffset[kin_var3]+kinSpan[kin_var3])]
 
-			temp_xtest[:,:,cartesian_offset:(cartesian_offset+kinSpan['cartesian'])] = x_test[:,:,kinOffset['cartesian']:kinOffset['cartesian']+kinSpan['cartesian']]
-			temp_xtest[:,:,(temp_offset+cartesian_offset):(temp_offset+cartesian_offset+kinSpan['cartesian'])] = x_test[:,:,offset+kinOffset['cartesian']:(offset+kinOffset['cartesian']+kinSpan['cartesian'])]
+			temp_xtest[:,:,cartesian_offset:(cartesian_offset+kinSpan[kin_var1])] = x_test[:,:,kinOffset[kin_var1]:kinOffset[kin_var1]+kinSpan[kin_var1]]
+			temp_xtest[:,:,(temp_offset+cartesian_offset):(temp_offset+cartesian_offset+kinSpan[kin_var1])] = x_test[:,:,offset+kinOffset[kin_var1]:(offset+kinOffset[kin_var1]+kinSpan[kin_var1])]
 
-			temp_xtest[:,:,linearVelocity_offset:(linearVelocity_offset+kinSpan['linearVelocity'])] = x_test[:,:,kinOffset['linearVelocity']:kinOffset['linearVelocity']+kinSpan['linearVelocity']]
-			temp_xtest[:,:,(temp_offset+linearVelocity_offset):(temp_offset+linearVelocity_offset+kinSpan['linearVelocity'])] = x_test[:,:,(offset+kinOffset['linearVelocity']):(offset+kinOffset['linearVelocity']+kinSpan['linearVelocity'])]
+			temp_xtest[:,:,angularVelocity_offset:(angularVelocity_offset+kinSpan[kin_var2])] = x_test[:,:,kinOffset[kin_var2]:kinOffset[kin_var2]+kinSpan[kin_var2]]
+			temp_xtest[:,:,(temp_offset+angularVelocity_offset):(temp_offset+angularVelocity_offset+kinSpan[kin_var2])] = x_test[:,:,(offset+kinOffset[kin_var2]):(offset+kinOffset[kin_var2]+kinSpan[kin_var2])]
 
-			temp_xtest[:,:,grasperAngle_offset:(grasperAngle_offset+kinSpan['grasperAngle'])] = x_test[:,:,kinOffset['grasperAngle']:kinOffset['grasperAngle']+kinSpan['grasperAngle']]
-			temp_xtest[:,:,(temp_offset+grasperAngle_offset):(temp_offset+grasperAngle_offset+kinSpan['grasperAngle'])] = x_test[:,:,offset+kinOffset['grasperAngle']:(offset+kinOffset['grasperAngle']+kinSpan['grasperAngle'])]
+			temp_xtest[:,:,grasperAngle_offset:(grasperAngle_offset+kinSpan[kin_var3])] = x_test[:,:,kinOffset[kin_var3]:kinOffset[kin_var3]+kinSpan[kin_var3]]
+			temp_xtest[:,:,(temp_offset+grasperAngle_offset):(temp_offset+grasperAngle_offset+kinSpan[kin_var3])] = x_test[:,:,offset+kinOffset[kin_var3]:(offset+kinOffset[kin_var3]+kinSpan[kin_var3])]
 
 			#print ("x train {} x test {}".format(x_train.shape, x_test.shape))
+			if x_train.shape[-1]>38:
+			    temp_xtrain = np.concatenate((temp_xtrain, x_train[:,:,38:]), axis=2)
+			    temp_xtest = np.concatenate((temp_xtest, x_test[:,:,38:]), axis=2)
 			data[i] = [temp_xtrain, y_train, temp_xtest, y_test]
 
-		return data
+		return data, kin_vars
 
 	def readtrainTest(self, dir_name):
 		"""
@@ -285,16 +300,16 @@ class experimentalSetup:
 		self.all_demonstrationdict = seq.all_demonstrationdict
 
 
-	def trainModel(self, data, itr, model_class, lstm_classifier, trial, user_out, setup):
+	def trainModel(self, data, itr, model_class, lstm_classifier, trial, user_out, setup, kinvars):
 		"""
 		This function calls the trainModel function in another class and gets accuracies
 		"""
 		_, timesteps, n_features = data[0][0].shape
 		lr = 0.001
 		print ("timesteps {} n_features {}".format(timesteps, n_features))
-		lstm_classifier  = model_class.buildModelv2(timesteps, n_features) #switching to GRU model
+		lstm_classifier  = model_class.buildModelv5(timesteps, n_features) #switching to GRU model
 		model_class.setData(data)
-		model_class.trainModel(lstm_classifier, trial, user_out, setup, lr, "convlstm_ae", self.currentTimestamp)
+		model_class.trainModel(lstm_classifier, trial, user_out, setup, lr, "convlstm_ae", self.currentTimestamp, kinvars)
 		return model_class, lstm_classifier
 
 	def setVariables(self, demonstrations):

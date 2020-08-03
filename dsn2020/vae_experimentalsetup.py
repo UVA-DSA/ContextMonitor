@@ -41,14 +41,14 @@ class vae_setup:
         if self.detection =="0" or self.detection=="1":
             timesteps = 1
         else:
-            timesteps = 1#5
+            timesteps = 1
 
         self.task_path = os.path.join(self.files_path, self.task)
         self.task_setup = os.path.join(self.task_path, setup)
         self.super_tasksetup = os.path.join(self.task_setup, super_task)
         merged_dict = self.iterateSetup()
         self.exp.setVariables(merged_dict)
-        for mode in range(0,1):
+        for mode in range(1,2):
             self.iter_labels = {}
             trial = self.selectTrial(mode)
             print ("current mode {}".format(trial))
@@ -57,7 +57,7 @@ class vae_setup:
 
             super_outlength = 0
             for name in sorted(glob.glob(glob_path)):
-                data = self.exp.readIteration(name, trial, setup, train=0)
+                data, kinvars = self.exp.readIteration(name, trial, setup, train=0, feature_selection = "specific")
                 print ("trial name {} data shape {}".format(name.split("/")[-1], data.shape))
                 if trial == "OneTrialOut":
                     data = data[0].reshape(1,-1)
@@ -78,11 +78,11 @@ class vae_setup:
 
                 elif self.detection =="2":
                     print ("Running anomaly detection using LSTMAE on entire trajectory")
-                    self.lstmae.getInput(self.exp.currentTimestamp, data, name.split("/")[-1]) #all gestures
+                    self.lstmae.getInput(self.exp.currentTimestamp, data, name.split("/")[-1], kinvars_=kinvars) #all gestures
 
                 elif self.detection == "3":
                     print ("Running anomaly detection using LSTMAE and based on gestures")
-                    self.lstmae.getCategorizedData(self.exp.currentTimestamp, data, name.split("/")[-1]) #gsture specific
+                    self.lstmae.getCategorizedData(self.exp.currentTimestamp, data, name.split("/")[-1], kinvars_=kinvars) #gsture specific
 
                 elif self.detection == "4":
                     print ("Running anomaly detection using LSTMAE concatenating feature vectors with gestures ")
