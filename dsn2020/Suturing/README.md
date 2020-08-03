@@ -2,7 +2,7 @@ Contains transcripts of anomalies, labelled gesture wise for all the demonstrati
 Original dataset (JIGSAWS) can be found from this link:
 https://cirl.lcsr.jhu.edu/research/hmm/datasets/jigsaws_release/
 
-Rubric used to label the demonstrations can be found in our paper:
+Rubric used to label the demonstrations can be found in Table II in our paper:
 Real-Time Context-aware Detection of Unsafe Events in Robot-Assisted Surgery
 Link: https://arxiv.org/abs/2005.03611
 
